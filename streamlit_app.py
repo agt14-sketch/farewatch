@@ -2,7 +2,7 @@ import datetime
 import requests
 import streamlit as st
 
-DEFAULT_API_BASE = "http://127.0.0.1:8000"
+DEFAULT_API_BASE = "https://farewatch.onrender.com"
 
 
 # -----------------------------
