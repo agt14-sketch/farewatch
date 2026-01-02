@@ -3,5 +3,5 @@ uvicorn
 requests
 python-dotenv
 streamlit 
-pydantic
+pydantic[email]
 sendgrid
