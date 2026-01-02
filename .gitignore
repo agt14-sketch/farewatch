@@ -1,6 +1,14 @@
 # Python
 __pycache__/
+*.pyc
 .venv/
 
-# Secrets
+# Databases
+*.db
+
+# Env files
 .env
+.env.*
+
+# OS
+.DS_Store
