@@ -49,6 +49,14 @@ CREATE TABLE IF NOT EXISTS global_min_alerts (
   last_sent_utc TEXT NOT NULL,
   PRIMARY KEY (origin, destination)
 );
+
+CREATE TABLE IF NOT EXISTS watch_subscriptions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  watch_id INTEGER NOT NULL,
+  email TEXT NOT NULL,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(watch_id, email)
+);
 """
 
 @contextmanager
