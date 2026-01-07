@@ -54,7 +54,9 @@ CREATE TABLE IF NOT EXISTS watch_subscriptions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   watch_id INTEGER NOT NULL,
   email TEXT NOT NULL,
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  created_utc TEXT NOT NULL,
+  last_emailed_cents INTEGER,
+  last_emailed_seen_utc TEXT,
   UNIQUE(watch_id, email)
 );
 """
@@ -72,6 +74,28 @@ def connect():
 def init_db():
     with connect() as c:
         c.executescript(SCHEMA)
+
+        # ---- migrations for older DBs ----
+        # Ensure watch_subscriptions has the columns our code uses
+        existing_cols = {
+            row["name"]
+            for row in c.execute("PRAGMA table_info(watch_subscriptions)").fetchall()
+        }
+
+        if "created_utc" not in existing_cols:
+            c.execute("ALTER TABLE watch_subscriptions ADD COLUMN created_utc TEXT;")
+            # backfill if old created_at existed
+            if "created_at" in existing_cols:
+                c.execute("""
+                    UPDATE watch_subscriptions
+                    SET created_utc = COALESCE(created_utc, created_at)
+                """)
+
+        if "last_emailed_cents" not in existing_cols:
+            c.execute("ALTER TABLE watch_subscriptions ADD COLUMN last_emailed_cents INTEGER;")
+
+        if "last_emailed_seen_utc" not in existing_cols:
+            c.execute("ALTER TABLE watch_subscriptions ADD COLUMN last_emailed_seen_utc TEXT;")
 
 def get_watch_id(origin, destination, depart_date, cabin="ECONOMY", adults=1, currency="USD"):
     with connect() as c:
@@ -147,9 +171,6 @@ def list_watches():
                    cabin,
                    adults,
                    currency,
-                   alert_email,
-                   last_emailed_cents,
-                   last_emailed_seen_utc
             FROM watches
             ORDER BY depart_date ASC
             """
@@ -328,7 +349,7 @@ def get_subscriptions_for_watch(watch_id: int):
 def count_subscriptions_for_watch(watch_id: int) -> int:
     with connect() as c:
         row = c.execute(
-            "SELECT COUNT(*) AS n FROM subscriptions WHERE watch_id=?",
+            "SELECT COUNT(*) AS n FROM watch_subscriptions WHERE watch_id=?",
             (watch_id,),
         ).fetchone()
     return int(row["n"])
@@ -350,7 +371,7 @@ def list_watches_with_stats() -> list[dict]:
                 w.currency,
                 w.created_utc,
 
-                (SELECT COUNT(*) FROM subscriptions s WHERE s.watch_id = w.id) AS subscriber_count,
+                (SELECT COUNT(*) FROM watch_subscriptions s WHERE s.watch_id = w.id) AS subscriber_count,
 
                 (SELECT COUNT(*) FROM fare_snapshots fs WHERE fs.watch_id = w.id) AS n,
                 (SELECT MIN(fs.price_cents) FROM fare_snapshots fs WHERE fs.watch_id = w.id) AS min_cents,
@@ -367,16 +388,6 @@ def list_watches_with_stats() -> list[dict]:
     # median requires python or sqlite window funcs; if you already have history_min_median(wid), use that in API per watch.
     return [dict(r) for r in rows]
 
-def create_subscription(watch_id: int, email: str):
-    with connect() as c:
-        cur = c.execute(
-            """
-            INSERT OR IGNORE INTO subscriptions (watch_id, email)
-            VALUES (?, ?)
-            """,
-            (watch_id, email),
-        )
-        return cur.lastrowid
     
 def delete_subscription(watch_id: int, email: str):
     with connect() as c:
