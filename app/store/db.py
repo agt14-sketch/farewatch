@@ -164,13 +164,18 @@ def list_watches():
     with connect() as c:
         rows = c.execute(
             """
-            SELECT id,
-                   origin,
-                   destination,
-                   depart_date,
-                   cabin,
-                   adults,
-                   currency,
+            SELECT
+                id,
+                origin,
+                destination,
+                depart_date,
+                cabin,
+                adults,
+                currency,
+                baseline_price_cents,
+                drop_threshold_pct,
+                value_percentile,
+                created_utc
             FROM watches
             ORDER BY depart_date ASC
             """
