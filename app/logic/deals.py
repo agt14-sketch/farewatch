@@ -10,8 +10,8 @@ log = logging.getLogger(__name__)
 
 # Amadeus client using your env vars
 AMADEUS = AmadeusClient(
-    client_id=os.getenv("AMADEUS_CLIENT_ID"),
-    client_secret=os.getenv("AMADEUS_CLIENT_SECRET"),
+    client_id=os.getenv("AMADEUS_KEY"),
+    client_secret=os.getenv("AMADEUS_SECRET"),
 )
 
 
