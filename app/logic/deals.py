@@ -9,10 +9,7 @@ from app.store.db import history_min_median
 log = logging.getLogger(__name__)
 
 # Amadeus client using your env vars
-AMADEUS = AmadeusClient(
-    client_id=os.getenv("AMADEUS_KEY"),
-    client_secret=os.getenv("AMADEUS_SECRET"),
-)
+AMADEUS = AmadeusClient()
 
 
 def is_new_low(watch_id: int) -> Optional[Dict]:
