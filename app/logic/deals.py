@@ -2,7 +2,7 @@ import os
 import logging
 from typing import Optional, Dict, Any
 
-from amadeus import Client, ResponseError
+from app.services.amadeus_client import AmadeusClient, AmadeusHTTPError
 
 from app.store.db import history_min_median
 
@@ -67,7 +67,7 @@ def search_best_offer_for_watch(watch: Dict[str, Any]) -> Optional[Dict[str, Any
             currencyCode=watch.get("currency", "USD"),
             max=20,  # you can tweak this
         )
-    except ResponseError as e:
+    except AmadeusHTTPError as e:
         log.warning("Amadeus error for watch %s: %s", watch.get("id"), e)
         return None
     except Exception as e:
