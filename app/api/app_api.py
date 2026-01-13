@@ -2,9 +2,10 @@ import os
 from datetime import date, timedelta
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, BackgroundTasks, APIRouter
 from pydantic import BaseModel, Field, EmailStr, field_validator
 
+from app.scripts.run_scheduler import run_scheduler_once
 from app.services.amadeus_client import AmadeusClient, AmadeusHTTPError
 from app.store.db import (
     init_db,
@@ -397,3 +398,13 @@ def search_flights(req: SearchRequest):
         "count": len(simplified),
         "offers": [s.model_dump() for s in simplified],
     }
+
+router = APIRouter()
+
+@router.post("/tasks/run_scheduler")
+def tasks_run_scheduler(background_tasks: BackgroundTasks):
+    """
+    Trigger one scheduler run in the background.
+    """
+    background_tasks.add_task(run_scheduler_once)
+    return {"status": "scheduled"}
