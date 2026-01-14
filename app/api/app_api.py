@@ -47,8 +47,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-router = APIRouter()
-
 @router.post("/tasks/run_scheduler")
 def tasks_run_scheduler(background_tasks: BackgroundTasks):
     """
