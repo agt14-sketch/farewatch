@@ -47,6 +47,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+router = APIRouter()
+
+@router.post("/tasks/run_scheduler")
+def tasks_run_scheduler(background_tasks: BackgroundTasks):
+    """
+    Trigger one scheduler run in the background.
+    """
+    background_tasks.add_task(run_scheduler_once)
+    return {"status": "scheduled"}
 
 # -------------------------
 # Models
@@ -398,13 +407,3 @@ def search_flights(req: SearchRequest):
         "count": len(simplified),
         "offers": [s.model_dump() for s in simplified],
     }
-
-router = APIRouter()
-
-@router.post("/tasks/run_scheduler")
-def tasks_run_scheduler(background_tasks: BackgroundTasks):
-    """
-    Trigger one scheduler run in the background.
-    """
-    background_tasks.add_task(run_scheduler_once)
-    return {"status": "scheduled"}
