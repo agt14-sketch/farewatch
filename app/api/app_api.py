@@ -2,7 +2,7 @@ import os
 from datetime import date, timedelta
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, Query, BackgroundTasks, APIRouter
+from fastapi import FastAPI, HTTPException, Query, BackgroundTasks
 from pydantic import BaseModel, Field, EmailStr, field_validator
 
 from scripts.run_scheduler import run_scheduler_once
@@ -47,7 +47,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@router.post("/tasks/run_scheduler")
+@app.post("/tasks/run_scheduler")
 def tasks_run_scheduler(background_tasks: BackgroundTasks):
     """
     Trigger one scheduler run in the background.
