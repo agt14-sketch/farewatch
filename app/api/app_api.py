@@ -5,7 +5,7 @@ from typing import Optional
 from fastapi import FastAPI, HTTPException, Query, BackgroundTasks, APIRouter
 from pydantic import BaseModel, Field, EmailStr, field_validator
 
-from app.scripts.run_scheduler import run_scheduler_once
+from scripts.run_scheduler import run_scheduler_once
 from app.services.amadeus_client import AmadeusClient, AmadeusHTTPError
 from app.store.db import (
     init_db,
