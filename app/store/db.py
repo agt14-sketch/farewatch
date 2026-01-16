@@ -1,6 +1,6 @@
 import os, sqlite3, json
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any
 import pytz
 
@@ -58,6 +58,15 @@ CREATE TABLE IF NOT EXISTS watch_subscriptions (
   last_emailed_cents INTEGER,
   last_emailed_seen_utc TEXT,
   UNIQUE(watch_id, email)
+);
+
+CREATE TABLE IF NOT EXISTS onboarding_email_queue (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT NOT NULL,
+  watch_id INTEGER NOT NULL,
+  created_utc TEXT NOT NULL,
+  sent_utc TEXT,
+  UNIQUE(email, watch_id)
 );
 """
 
@@ -402,4 +411,67 @@ def delete_subscription(watch_id: int, email: str):
             WHERE watch_id = ? AND email = ?
             """,
             (watch_id, email),
+        )
+
+def queue_onboarding_email(email: str, watch_id: int) -> None:
+    """
+    Queue an onboarding email entry for (email, watch_id).
+    Uses UNIQUE(email, watch_id) so we don't duplicate work.
+    """
+    if not email:
+        return
+
+    now = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    with connect() as c:
+        c.execute(
+            """
+            INSERT OR IGNORE INTO onboarding_email_queue (email, watch_id, created_utc, sent_utc)
+            VALUES (?, ?, ?, NULL)
+            """,
+            (email, watch_id, now),
+        )
+
+
+def fetch_pending_onboarding_rows(cutoff_iso: str):
+    """
+    Get all unsent onboarding queue rows whose created_utc <= cutoff_iso,
+    joined with the watch details.
+    Returns a list of dicts.
+    """
+    with connect() as c:
+        rows = c.execute(
+            """
+            SELECT
+                q.id AS queue_id,
+                q.email,
+                q.created_utc,
+                w.id AS watch_id,
+                w.origin,
+                w.destination,
+                w.depart_date,
+                w.cabin,
+                w.adults,
+                w.currency
+            FROM onboarding_email_queue q
+            JOIN watches w ON w.id = q.watch_id
+            WHERE q.sent_utc IS NULL
+              AND q.created_utc <= ?
+            ORDER BY q.email, q.created_utc ASC
+            """,
+            (cutoff_iso,),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def mark_onboarding_sent(queue_ids: list[int], sent_utc: str) -> None:
+    if not queue_ids:
+        return
+    with connect() as c:
+        c.executemany(
+            """
+            UPDATE onboarding_email_queue
+            SET sent_utc = ?
+            WHERE id = ?
+            """,
+            [(sent_utc, qid) for qid in queue_ids],
         )
