@@ -18,7 +18,7 @@ from app.store.db import (
     ensure_subscription,
     get_subscriptions_for_watch,
     delete_subscription,
-    queue_onboarding_email,
+    onboarding_email_queue
 
 )
 
