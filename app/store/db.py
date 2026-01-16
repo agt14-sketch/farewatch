@@ -413,7 +413,7 @@ def delete_subscription(watch_id: int, email: str):
             (watch_id, email),
         )
 
-def queue_onboarding_email(email: str, watch_id: int) -> None:
+def onboarding_email_queue(email: str, watch_id: int) -> None:
     """
     Queue an onboarding email entry for (email, watch_id).
     Uses UNIQUE(email, watch_id) so we don't duplicate work.
