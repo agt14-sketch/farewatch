@@ -18,6 +18,7 @@ from app.store.db import (
     ensure_subscription,
     get_subscriptions_for_watch,
     delete_subscription,
+    queue_onboarding_email,
 
 )
 
@@ -189,6 +190,7 @@ def create_watch(req: WatchCreate):
         sub_id: Optional[int] = None
         if req.alert_email:
             sub_id = ensure_subscription(wid, str(req.alert_email))
+            queue_onboarding_email(req.alert_email, watch_id)
 
         return {
             "watch_id": wid,
