@@ -55,7 +55,7 @@ def search_best_offer_for_watch(watch: Dict[str, Any]) -> Optional[Dict[str, Any
     or None if nothing found / error.
     """
     try:
-        response = AMADEUS.shopping.flight_offers_search.get(
+        response = AMADEUS.search_flights(
             originLocationCode=watch["origin"],
             destinationLocationCode=watch["destination"],
             departureDate=watch["depart_date"],
