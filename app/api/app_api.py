@@ -407,3 +407,17 @@ def search_flights(req: SearchRequest):
         "count": len(simplified),
         "offers": [s.model_dump() for s in simplified],
     }
+@app.get("/debug/onboarding_queue")
+def debug_onboarding_queue():
+    with db.connect() as c:
+        rows = c.execute(
+            """
+            SELECT id, email, watch_id, created_utc, sent_utc 
+            FROM onboarding_email_queue 
+            ORDER BY created_utc DESC
+            LIMIT 20
+            """
+        ).fetchall()
+    return {"rows": [dict(r) for r in rows]}
+    
+        
