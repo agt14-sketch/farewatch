@@ -7,6 +7,10 @@ import logging
 from datetime import datetime, timedelta, timezone
 import json
 
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+    
 from app.store import db
 from app.logic.deals import is_new_low, drop_pct, search_best_offer_for_watch
 from app.notifiers.emailer import send_email
