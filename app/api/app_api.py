@@ -189,8 +189,9 @@ def create_watch(req: WatchCreate):
 
         sub_id: Optional[int] = None
         if req.alert_email:
-            sub_id = ensure_subscription(wid, str(req.alert_email))
-            onboarding_email_queue(str(req.alert_email), wid)
+            email_str = str(req.alert_email)
+            sub_id = ensure_subscription(wid, email_str)
+            onboarding_email_queue(email_str, wid)
 
         return {
             "watch_id": wid,
