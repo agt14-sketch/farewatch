@@ -407,7 +407,7 @@ def delete_subscription(watch_id: int, email: str):
     with connect() as c:
         c.execute(
             """
-            DELETE FROM subscriptions
+            DELETE FROM watch_subscriptions
             WHERE watch_id = ? AND email = ?
             """,
             (watch_id, email),
@@ -432,7 +432,7 @@ def onboarding_email_queue(email: str, watch_id: int) -> None:
         )
 
 
-def fetch_pending_onboarding_rows(cutoff_iso: str):
+def fetch_pending_onboarding_rows(cutoff_iso: str) -> list[dict]:
     """
     Get all unsent onboarding queue rows whose created_utc <= cutoff_iso,
     joined with the watch details.
@@ -454,7 +454,7 @@ def fetch_pending_onboarding_rows(cutoff_iso: str):
                 w.currency
             FROM onboarding_email_queue q
             JOIN watches w ON w.id = q.watch_id
-            WHERE q.sent_utc IS NULL
+            WHERE (q.sent_utc IS NULL OR q.sent_utc = '')
               AND q.created_utc <= ?
             ORDER BY q.email, q.created_utc ASC
             """,
@@ -462,16 +462,22 @@ def fetch_pending_onboarding_rows(cutoff_iso: str):
         ).fetchall()
     return [dict(r) for r in rows]
 
-
 def mark_onboarding_sent(queue_ids: list[int], sent_utc: str) -> None:
+    """
+    Mark the given onboarding_email_queue rows as sent.
+    """
     if not queue_ids:
         return
+
+    placeholders = ",".join(["?"] * len(queue_ids))
+    params = [sent_utc] + queue_ids
+
     with connect() as c:
-        c.executemany(
-            """
+        c.execute(
+            f"""
             UPDATE onboarding_email_queue
             SET sent_utc = ?
-            WHERE id = ?
+            WHERE id IN ({placeholders})
             """,
-            [(sent_utc, qid) for qid in queue_ids],
+            params,
         )
