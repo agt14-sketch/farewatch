@@ -25,17 +25,8 @@ def utcnow_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
-def fetch_watches_with_subscribers():
-    with db.connect() as c:
-        rows = c.execute(
-            """
-            SELECT DISTINCT w.*
-            FROM watches w
-            JOIN watch_subscriptions s ON s.watch_id = w.id
-            ORDER BY w.depart_date ASC, w.id DESC
-            """
-        ).fetchall()
-    return [dict(r) for r in rows]
+def fetch_watches():
+    return db.list_watches()
 
 
 def take_snapshot_for_watch(watch: dict) -> dict | None:
