@@ -48,13 +48,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.post("/tasks/run_scheduler")
-def tasks_run_scheduler(background_tasks: BackgroundTasks):
-    """
-    Trigger one scheduler run in the background.
-    """
-    background_tasks.add_task(run_scheduler_once)
-    return {"status": "scheduled"}
+from app.api.tasks import router as tasks_router
+app.include_router(tasks_router)
 
 # -------------------------
 # Models
