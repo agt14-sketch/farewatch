@@ -33,12 +33,8 @@ START_OFFSET_DAYS = int(os.getenv("START_OFFSET_DAYS", "30"))
 WINDOW_DAYS = int(os.getenv("WINDOW_DAYS", "30"))
 START_DATE = os.getenv("START_DATE")  # optional YYYY-MM-DD
 
-app = FastAPI(
-    title="Farewatch API",
-    description="Local API for your flight price watcher.",
-    version="0.1.0",
-    on_startup=[init_db],
-)
+app = FastApi(on_startup=[db.init_db])
+
 
 app.add_middleware(
     CORSMiddleware,
