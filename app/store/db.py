@@ -6,7 +6,9 @@ import pytz
 
 EST = pytz.timezone("America/New_York")
 
-DB_PATH = os.getenv("DB_PATH", "farewatch.db")
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL: 
+  raise RunTimeError("Set DATABASE_URL in evironment variables (Render Postgres)")
 
 SCHEMA = """
 PRAGMA journal_mode=WAL;
