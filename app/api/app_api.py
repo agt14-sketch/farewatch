@@ -7,20 +7,7 @@ from pydantic import BaseModel, Field, EmailStr, field_validator
 
 from scripts.run_scheduler import run_scheduler_once
 from app.services.amadeus_client import AmadeusClient, AmadeusHTTPError
-from app.store.db import (
-    init_db,
-    list_watches,
-    delete_watch_by_id,
-    ensure_watch,
-    history_min_median,
-    history_for_watch,
-    get_global_min_for_window,
-    ensure_subscription,
-    get_subscriptions_for_watch,
-    delete_subscription,
-    onboarding_email_queue
-
-)
+from app.store import db
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -138,26 +125,13 @@ def healthz():
 # Watches
 # -------------------------
 @app.get("/watches")
-def get_watches(alert_email: Optional[str] = Query(default=None, description="Filter by subscriber email (optional)")):
-    watches = list_watches()
+def get_watches():
+    watches = db.list_watches_with_stats()
 
-    # attach stats (helps streamlit UI)
+    # optional: compute median using history_min_median per watch (slower)
     for w in watches:
-        stats = history_min_median(w["id"])
-        if stats:
-            w["n"] = stats["n"]
-            w["latest_cents"] = stats["latest_cents"]
-            w["min_cents"] = stats["min_cents"]
-            w["median_cents"] = stats["median_cents"]
-        else:
-            w["n"] = 0
-            w["latest_cents"] = None
-            w["min_cents"] = None
-            w["median_cents"] = None
-
-    # NOTE: filtering by alert_email only makes sense if your watch table stores it;
-    # your new design is subscriptions-based. So we don't filter watches by email here.
-    # Streamlit should instead call /watches/{id}/subscriptions and filter client-side if needed.
+        stats = db.history_min_median(w["id"])
+        w["median_cents"] = stats["median_cents"] if stats else None
 
     return {"count": len(watches), "watches": watches}
 
@@ -169,7 +143,7 @@ def create_watch(req: WatchCreate):
     Optionally subscribe alert_email to that watch.
     """
     try:
-        wid = ensure_watch(
+        wid = db.ensure_watch(
             req.origin,
             req.destination,
             req.depart_date,
