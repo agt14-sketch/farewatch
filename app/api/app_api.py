@@ -20,7 +20,7 @@ START_OFFSET_DAYS = int(os.getenv("START_OFFSET_DAYS", "30"))
 WINDOW_DAYS = int(os.getenv("WINDOW_DAYS", "30"))
 START_DATE = os.getenv("START_DATE")  # optional YYYY-MM-DD
 
-app = FastApi(on_startup=[db.init_db])
+app = FastAPI(on_startup=[db.init_db])
 
 
 app.add_middleware(
