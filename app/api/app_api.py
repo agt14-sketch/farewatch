@@ -155,8 +155,8 @@ def create_watch(req: WatchCreate):
         sub_id: Optional[int] = None
         if req.alert_email:
             email_str = str(req.alert_email)
-            sub_id = ensure_subscription(wid, email_str)
-            onboarding_email_queue(email_str, wid)
+            sub_id = db.ensure_subscription(wid, email_str)
+            db.onboarding_email_queue(email_str, wid)
 
         return {
             "watch_id": wid,
@@ -175,7 +175,7 @@ def create_watch(req: WatchCreate):
 
 @app.delete("/watches/{watch_id}")
 def delete_watch(watch_id: int):
-    delete_watch_by_id(watch_id)
+    db.delete_watch_by_id(watch_id)
     return {"ok": True, "watch_id": watch_id}
 
 
@@ -185,7 +185,7 @@ def delete_watch(watch_id: int):
 @app.post("/subscriptions")
 def subscribe(req: SubscribeRequest):
     try:
-        sid = ensure_subscription(req.watch_id, str(req.email))
+        sid = db.ensure_subscription(req.watch_id, str(req.email))
         return {"subscription_id": sid, "watch_id": req.watch_id, "email": str(req.email)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -194,7 +194,7 @@ def subscribe(req: SubscribeRequest):
 @app.get("/watches/{watch_id}/subscriptions")
 def get_watch_subscriptions(watch_id: int):
     try:
-        return {"count": 0, "subscriptions": get_subscriptions_for_watch(watch_id)}
+        return {"count": 0, "subscriptions":db.get_subscriptions_for_watch(watch_id)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -205,7 +205,7 @@ def unsubscribe(req: SubscribeRequest):
     Delete subscription by (watch_id, email)
     """
     try:
-        deleted = delete_subscription(req.watch_id, str(req.email))
+        deleted = db.delete_subscription(req.watch_id, str(req.email))
         return {"deleted": deleted, "watch_id": req.watch_id, "email": str(req.email)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -216,7 +216,7 @@ def unsubscribe(req: SubscribeRequest):
 # -------------------------
 @app.get("/history/{watch_id}")
 def get_history(watch_id: int):
-    rows = history_for_watch(watch_id)
+    rows = db.history_for_watch(watch_id)
     if not rows:
         raise HTTPException(status_code=404, detail="No history for that watch_id")
     for r in rows:
@@ -233,7 +233,7 @@ def get_window_info():
 
     end = start + timedelta(days=WINDOW_DAYS - 1)
 
-    watches = list_watches()
+    watches = db.list_watches()
     rows = []
 
     for w in watches:
@@ -244,7 +244,7 @@ def get_window_info():
         if not (start <= dep <= end):
             continue
 
-        stats = history_min_median(w["id"])
+        stats = db.history_min_median(w["id"])
         if not stats:
             continue
 
@@ -277,7 +277,7 @@ def get_cheapest_in_window():
     start = date.today() + timedelta(days=START_OFFSET_DAYS)
     end = start + timedelta(days=WINDOW_DAYS - 1)
 
-    gm = get_global_min_for_window(ORIGIN, DEST, start.isoformat(), end.isoformat())
+    gm = db.get_global_min_for_window(ORIGIN, DEST, start.isoformat(), end.isoformat())
     if not gm:
         return {"message": "No data yet for this window."}
 
